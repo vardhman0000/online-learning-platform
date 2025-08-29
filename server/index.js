@@ -20,6 +20,9 @@ app.get('/', (req, res) => {
   res.send('Server is running and MongoDB is connected!');
 });
 
+const authRoutes = require('./src/routes/authRoutes');
+app.use('/api/auth', authRoutes);
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

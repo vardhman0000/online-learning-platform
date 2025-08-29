@@ -23,6 +23,13 @@ app.get('/', (req, res) => {
 const authRoutes = require('./src/routes/authRoutes');
 app.use('/api/auth', authRoutes);
 
+const courseRoutes = require('./src/routes/courseRoutes');
+app.use('/api/courses', courseRoutes);
+
+// const lectureRoutes = require('./src/routes/lectureRoutes');
+// app.use('/api/lectures', lectureRoutes);
+
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

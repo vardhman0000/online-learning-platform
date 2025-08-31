@@ -2,10 +2,17 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
+const authRoutes = require('./src/routes/authRoutes');
+const courseRoutes = require('./src/routes/courseRoutes');
+const lectureRoutes = require('./src/routes/lectureRoutes');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+app.use('/api/auth', authRoutes);
+app.use('/api/courses', courseRoutes);
+app.use('/api/lectures', lectureRoutes);
 
 const PORT = process.env.PORT || 4000;
 
@@ -19,15 +26,6 @@ mongoose.connect(process.env.MONGODB_URI, {
 app.get('/', (req, res) => {
   res.send('Server is running and MongoDB is connected!');
 });
-
-const authRoutes = require('./src/routes/authRoutes');
-app.use('/api/auth', authRoutes);
-
-const courseRoutes = require('./src/routes/courseRoutes');
-app.use('/api/courses', courseRoutes);
-
-// const lectureRoutes = require('./src/routes/lectureRoutes');
-// app.use('/api/lectures', lectureRoutes);
 
 
 app.listen(PORT, () => {

@@ -1,9 +1,20 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
-const questionSchema = new mongoose.Schema({
-  text: { type: String, required: true },
-  answers: { type: [String], required: true },
-  correctAnswer: { type: Number, required: true }, // Index of the correct answer in the answers array
+const QuestionSchema = new mongoose.Schema({
+  text: {
+    type: String,
+    required: true,
+  },
+  answers: {
+    type: [String],
+    required: true,
+    validate: [(val) => val.length > 1, 'A question must have at least two answers.'],
+  },
+  correctAnswer: {
+    type: Number,
+    required: true,
+  },
 });
 
-module.exports = mongoose.model("Question", questionSchema);
+// We export the schema to be used as a sub-document in the Lecture model.
+module.exports = QuestionSchema;

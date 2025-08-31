@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import authService from '../services/authService';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
@@ -7,6 +8,7 @@ const LoginPage = () => {
     password: '',
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
@@ -16,31 +18,26 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     setError('');
 
     try {
-      const response = await fetch('/api/auth/login', { // Make sure this endpoint is correct
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
+      const data = await authService.login(formData);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Login failed. Please check your credentials.');
-      }
-
-      // NOTE: Storing tokens in localStorage is common but has security implications (XSS).
-      // For production apps, consider more secure storage like HttpOnly cookies.
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      // The authService now handles storing the token and user data correctly.
 
       console.log('Login successful:', data);
-      navigate('/'); // Redirect to homepage or dashboard after login
-
+      // Redirect based on user role
+      if (data.user.role === 'Instructor') {
+        navigate('/dashboard/instructor');
+      } else {
+        navigate('/'); // Redirect students to the home page for now
+      }
     } catch (err) {
-      setError(err.message);
+      // Use the error from axios response if available, otherwise use the error message.
+      setError(err.response?.data?.error || err.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -96,8 +93,8 @@ const LoginPage = () => {
           {error && <p className="text-sm text-red-600">{error}</p>}
 
           <div>
-            <button type="submit" className="flex justify-center w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-              Log In
+            <button type="submit" disabled={loading} className="flex justify-center w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
+              {loading ? 'Logging in...' : 'Log In'}
             </button>
           </div>
         </form>

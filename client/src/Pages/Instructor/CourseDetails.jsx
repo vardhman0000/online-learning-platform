@@ -14,22 +14,24 @@ const CourseDetails = () => {
   const [editingLecture, setEditingLecture] = useState(null); // Can be a lecture object or `true` for new
   const [isEditingCourse, setIsEditingCourse] = useState(false);
 
+  
   const fetchCourseDetails = async () => {
-    try {
-      setLoading(true);
-      const user = JSON.parse(localStorage.getItem('user'));
-      if (!user || !user.token) {
-        setError('You must be logged in to view this page.');
-        return;
-      }
-      const response = await courseService.getCourse(courseId, user.token);
-      setCourse(response.data);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch course details.');
-    } finally {
-      setLoading(false);
+  try {
+    setLoading(true);
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user || !user.token) {
+      setError('You must be logged in to view this page.');
+      return;
     }
-  };
+    const courseData = await courseService.getCourse(courseId, user.token);
+    setCourse(courseData.data.course); // ✅ directly set course
+  } catch (err) {
+    setError(err.response?.data?.message || 'Failed to fetch course details.');
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   useEffect(() => {
     fetchCourseDetails();
@@ -100,12 +102,12 @@ const CourseDetails = () => {
             onCancel={() => setIsEditingCourse(false)}
           />
         ) : (
-          <div className="flex flex-col sm:flex-row justify-between items-start mb-4">
-            <div>
+          <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
+            <div className="flex-grow">
               <h2 className="text-3xl font-bold text-gray-900">{course.title}</h2>
-              <p className="mt-2 text-gray-600 max-w-2xl">{course.description}</p>
+              <p className="mt-2 text-gray-600 max-w-2xl whitespace-pre-wrap break-words">{course.description}</p>
             </div>
-            <div className="flex space-x-2 mt-4 sm:mt-0">
+            <div className="flex flex-shrink-0 space-x-2 mt-4 sm:mt-0">
               <button onClick={() => setIsEditingCourse(true)} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 text-sm">Edit Course</button>
               <button onClick={handleDeleteCourse} className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 text-sm">Delete Course</button>
             </div>
@@ -141,7 +143,7 @@ const CourseDetails = () => {
                   </div>
                 </div>
                 <div className="mt-4 pl-4 border-l-2 border-gray-200 text-gray-700">
-                  {lecture.type === 'Reading' ? (
+                  {lecture.type === 'reading' ? (
                     // The 'whitespace-pre-wrap' class preserves newlines and wraps text.
                     // The 'break-words' class breaks long words to prevent overflow.
                     <div className="whitespace-pre-wrap break-words text-sm text-gray-800">{lecture.content}</div>

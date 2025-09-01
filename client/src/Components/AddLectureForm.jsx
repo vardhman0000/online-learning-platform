@@ -4,7 +4,7 @@ import lectureService from '../services/lectureService';
 const AddLectureForm = ({ courseId, lectureToEdit, onSave, onCancel }) => {
   const isEditing = !!lectureToEdit;
 
-  const [lectureType, setLectureType] = useState('Reading');
+  const [lectureType, setLectureType] = useState('reading');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [questions, setQuestions] = useState([
@@ -17,7 +17,7 @@ const AddLectureForm = ({ courseId, lectureToEdit, onSave, onCancel }) => {
     if (isEditing) {
       setTitle(lectureToEdit.title);
       setLectureType(lectureToEdit.type);
-      if (lectureToEdit.type === 'Reading') {
+      if (lectureToEdit.type === 'reading') {
         setContent(lectureToEdit.content);
       } else {
         setQuestions(lectureToEdit.questions);
@@ -75,8 +75,8 @@ const AddLectureForm = ({ courseId, lectureToEdit, onSave, onCancel }) => {
     setError(null);
 
     let lectureData;
-    if (lectureType === 'Reading') {
-      lectureData = { title, type: 'Reading', content };
+    if (lectureType === 'reading') {
+      lectureData = { title, type: 'reading', content };
     } else {
       for (const q of questions) {
         if (!q.text.trim() || q.answers.some(a => !a.trim()) || q.answers.length < 2) {
@@ -85,7 +85,7 @@ const AddLectureForm = ({ courseId, lectureToEdit, onSave, onCancel }) => {
           return;
         }
       }
-      lectureData = { title, type: 'Quiz', questions };
+      lectureData = { title, type: 'quiz', questions };
     }
 
     try {
@@ -119,8 +119,8 @@ const AddLectureForm = ({ courseId, lectureToEdit, onSave, onCancel }) => {
             disabled={isEditing} // Do not allow changing type when editing
             className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
           >
-            <option value="Reading">Reading</option>
-            <option value="Quiz">Quiz</option>
+            <option value="reading">Reading</option>
+            <option value="quiz">Quiz</option>
           </select>
         </div>
         <div>
@@ -135,7 +135,7 @@ const AddLectureForm = ({ courseId, lectureToEdit, onSave, onCancel }) => {
           />
         </div>
 
-        {lectureType === 'Reading' ? (
+        {lectureType === 'reading' ? (
           <div>
             <label htmlFor="lecture-content" className="block text-sm font-medium text-gray-700 mb-1">Content (Text or Link)</label>
             <textarea

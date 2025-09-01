@@ -22,6 +22,18 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
+const progressSchema = new mongoose.Schema({
+  course: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Course',
+    required: true
+  },
+  completedLectures: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Lecture'
+  }]
+}, { _id: false });
+
 const UserSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -47,6 +59,7 @@ const UserSchema = new mongoose.Schema({
     minlength: 6,
     select: false, // Don't return password by default
   },
+  progress: [progressSchema], // Array of course progress
   createdAt: {
     type: Date,
     default: Date.now,

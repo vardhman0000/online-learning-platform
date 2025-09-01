@@ -1,8 +1,16 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-// import './LandingPage.css'; // This is no longer needed with Tailwind CSS
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const LandingPage = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 text-gray-800">
       {/* Header */}
@@ -13,10 +21,25 @@ const LandingPage = () => {
           </div>
           <nav className="flex items-center space-x-6">
             <Link to="/courses" className="font-semibold text-gray-700 hover:text-indigo-600 transition-colors duration-300">Courses</Link>
-            <Link to="/login" className="font-semibold text-gray-700 hover:text-indigo-600 transition-colors duration-300">Log In</Link>
-            <Link to="/signup" className="bg-indigo-600 text-white font-semibold py-2 px-5 rounded-lg hover:bg-indigo-700 transition-colors duration-300">
-              Sign Up
-            </Link>
+            {user ? (
+              <>
+                <button onClick={handleLogout} className="font-semibold text-gray-700 hover:text-indigo-600 transition-colors duration-300">
+                  Log Out
+                </button>
+                <Link to={user.role === 'instructor' ? '/instructor/dashboard' : '/'} title="Dashboard">
+                  <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold text-lg hover:bg-indigo-200 transition-colors">
+                    {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="font-semibold text-gray-700 hover:text-indigo-600 transition-colors duration-300">Log In</Link>
+                <Link to="/signup" className="bg-indigo-600 text-white font-semibold py-2 px-5 rounded-lg hover:bg-indigo-700 transition-colors duration-300">
+                  Sign Up
+                </Link>
+              </>
+            )}
           </nav>
         </div>
       </header>

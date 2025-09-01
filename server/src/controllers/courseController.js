@@ -1,122 +1,59 @@
-// const Course = require("../models/Course");
-// const UserProgress = require('../models/UserProgress');
-// const mongoose = require('mongoose');
-// const Lecture = require("../models/Lecture");
-// // const asyncHandler = require('../middleware/async');
-
-// exports.createCourse = async (req, res) => {
-//   try {
-//     const { title, description } = req.body;
-//     const instructor = req.user.id; // Assuming user ID is available in req.user from auth middleware
-
-//     // Check for duplicate course by the same instructor
-//     const existingCourse = await Course.findOne({ title, instructor });
-//     if (existingCourse) {
-//       return res
-//         .status(409)
-//         .json({ message: "You have already created a course with this title." });
-//     }
-
-//     const course = new Course({
-//       title,
-//       description,
-//       instructor,
-//     });
-
-//     await course.save();
-//     res.status(201).json({ message: "Course created successfully", course });
-//   } catch (error) {
-//     console.error(error);
-//     res
-//       .status(500)
-//       .json({ message: "Failed to create course", error: error.message });
-//   }
-// };
-
-// // @desc    Get courses for the logged-in instructor
-// // @route   GET /api/courses
-// // @access  Private (Instructor)
-// exports.getCoursesByInstructor = asyncHandler(async (req, res, next) => {
-//   const courses = await Course.find({ instructor: req.user.id });
-//   res.status(200).json({
-//     success: true,
-//     count: courses.length,
-//     data: courses,
-//   });
-// });
-
-// // @desc    Get single course
-// // @route   GET /api/courses/:id
-// // @access  Private
-// exports.getCourse = asyncHandler(async (req, res, next) => {
-//   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-//     return res.status(404).json({ success: false, message: 'Course not found' });
-//   }
-//   const course = await Course.findById(req.params.id).populate('lectures');
-//   if (!course) {
-//     return res.status(404).json({ success: false, message: 'Course not found' });
-//   }
-//   res.status(200).json({ success: true, data: course });
-// });
-
-
-
-// exports.getAllCourses = async (req, res) => {
-//   try {
-//     // Select only the title and description for the list view
-//     const courses = await Course.find({}).select('title description');
-//     res.json(courses);
-//   } catch (error) {
-//     res.status(500).json({ message: 'Failed to retrieve courses', error: error.message });
-//   }
-// };
-
-// exports.enrollInCourse = async (req, res) => {
-//   try {
-//     const { courseId } = req.params;
-//     const userId = req.user.id;
-
-//     // Check if user is already enrolled
-//     const existingProgress = await UserProgress.findOne({ user: userId, course: courseId });
-//     if (existingProgress) {
-//       return res.status(409).json({ message: 'Already enrolled in this course' });
-//     }
-
-//     // Create a new progress document
-//     const progress = new UserProgress({ user: userId, course: courseId });
-//     await progress.save();
-
-//     res.status(201).json({ message: 'Successfully enrolled in course', progress });
-//   } catch (error) {
-//     res.status(500).json({ message: 'Failed to enroll in course', error: error.message });
-//   }
-// };
-
-// exports.getCourseProgress = async (req, res) => {
-//   try {
-//     const { courseId } = req.params;
-//     const userId = req.user.id;
-
-//     const course = await Course.findById(courseId).lean();
-//     if (!course) return res.status(404).json({ message: 'Course not found' });
-
-//     const progress = await UserProgress.findOne({ user: userId, course: courseId }).lean();
-//     const completedCount = progress ? progress.completedLectures.length : 0;
-
-//     res.json({ completed: completedCount, total: course.lectures.length });
-//   } catch (error) {
-//     res.status(500).json({ message: 'Failed to get course progress', error: error.message });
-//   }
-// };
-
-
 const Course = require("../models/Course");
 const Lecture = require("../models/Lecture");
+const User = require('../models/User');
 const asyncHandler = require('../middleware/async'); // Assuming you have this for error handling
 const mongoose = require('mongoose');
 
-// @desc    Get courses for the logged-in instructor
+// @desc    Get all available courses for students
 // @route   GET /api/courses
+// @access  Public
+exports.getAllCourses = asyncHandler(async (req, res, next) => {
+  const courses = await Course.find({}, 'title description');
+  res.status(200).json({ success: true, data: courses });
+});
+
+// @desc    Get a single course with its lectures and user progress (Student View)
+// @route   GET /api/courses/:id
+// @access  Private
+exports.getCourseDetails = asyncHandler(async (req, res, next) => {
+  // The route uses '/:id', so we must use req.params.id here.
+  console.log("Fetching course details for course ID:", req.params.id);
+  
+  const course = await Course.findById(req.params.id).populate('lectures', 'title type content questions').lean();
+  console.log("Course fetched:", course);
+  
+
+  if (!course) {
+    return res.status(404).json({ success: false, error: 'Course not found' });
+  }
+
+  // Find user progress for this specific course
+  const user = await User.findById(req.user.id);
+  if (!user) {
+    return res.status(404).json({ success: false, error: 'User not found' });
+  }
+
+  const courseProgress = user.progress.find(p => p.course.toString() === req.params.id);
+
+  const completedLectures = courseProgress ? courseProgress.completedLectures.map(id => id.toString()) : [];
+
+  // Augment lectures with completion status
+  course.lectures = course.lectures.map(lecture => ({
+    ...lecture,
+    isCompleted: completedLectures.includes(lecture._id.toString())
+  }));
+
+  res.status(200).json({
+    success: true,
+    data: {
+      course,
+      completedLectures
+    }
+  });
+});
+
+// @desc    Get courses for the logged-in instructor
+// @route   GET /api/courses/mine
 // @access  Private (Instructor)
 exports.getCoursesByInstructor = asyncHandler(async (req, res, next) => {
   const courses = await Course.find({ instructor: req.user.id });
@@ -127,9 +64,9 @@ exports.getCoursesByInstructor = asyncHandler(async (req, res, next) => {
   });
 });
 
-// @desc    Get single course
-// @route   GET /api/courses/:id
-// @access  Private
+// @desc    Get single course (Instructor View)
+// @route   GET /api/courses/:id/manage
+// @access  Private (Instructor)
 exports.getCourse = asyncHandler(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
     return res.status(404).json({ success: false, message: 'Course not found' });
@@ -140,8 +77,15 @@ exports.getCourse = asyncHandler(async (req, res, next) => {
     return res.status(404).json({ success: false, message: 'Course not found' });
   }
 
+  // Optional: Check if the instructor owns the course
+  if (course.instructor.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Not authorized to view this course' });
+  }
+
   res.status(200).json({ success: true, data: course });
 });
+
+
 
 // @desc    Create new course
 // @route   POST /api/courses
@@ -156,7 +100,7 @@ exports.createCourse = asyncHandler(async (req, res, next) => {
 });
 
 // @desc    Update course
-// @route   PUT /api/courses/:id
+// @route   PUT /api/courses/:id/manage
 // @access  Private (Instructor)
 exports.updateCourse = asyncHandler(async (req, res, next) => {
   let course = await Course.findById(req.params.id);
@@ -179,7 +123,7 @@ exports.updateCourse = asyncHandler(async (req, res, next) => {
 });
 
 // @desc    Delete course
-// @route   DELETE /api/courses/:id
+// @route   DELETE /api/courses/:id/manage
 // @access  Private (Instructor)
 exports.deleteCourse = asyncHandler(async (req, res, next) => {
   const course = await Course.findById(req.params.id);
@@ -200,4 +144,3 @@ exports.deleteCourse = asyncHandler(async (req, res, next) => {
 
   res.status(200).json({ success: true, data: {} });
 });
-

@@ -167,13 +167,66 @@
 // server/src/controllers/lectureController.js
 const Lecture = require('../models/Lecture');
 const Course = require('../models/Course');
+const User = require('../models/User');
 const asyncHandler = require('../middleware/async');
+
+
+/*
+ * @desc    Get a single lecture
+ * @route   GET /api/lectures/:lectureId
+ * @access  Private
+ */
+exports.getLecture = asyncHandler(async (req, res, next) => {
+  const lecture = await Lecture.findById(req.params.lectureId).populate('questions', '-correctOptionIndex'); // Exclude correct answer
+
+  if (!lecture) {
+    return res.status(404).json({ success: false, error: 'Lecture not found' });
+  }
+
+  res.status(200).json({ success: true, data: lecture });
+});
+
+
+/*
+ * @desc    Mark a lecture as complete
+ * @route   POST /api/lectures/:lectureId/complete
+ * @access  Private
+ */
+exports.markAsComplete = asyncHandler(async (req, res, next) => {
+  const { courseId } = req.body;
+  const lectureId = req.params.lectureId;
+  const userId = req.user.id;
+
+  const user = await User.findById(userId);
+  let courseProgress = user.progress.find(p => p.course.toString() === courseId);
+
+  if (!courseProgress) {
+    // If no progress for this course, create it
+    user.progress.push({ course: courseId, completedLectures: [lectureId] });
+  } else {
+    // Add lecture to completed if it's not already there
+    const isCompleted = courseProgress.completedLectures.some(id => id.toString() === lectureId);
+    if (!isCompleted) {
+      courseProgress.completedLectures.push(lectureId);
+    }
+  }
+
+  await user.save();
+
+  res.status(200).json({ success: true, data: {} });
+});
+
+
 
 // @desc    Add a lecture to a course
 // @route   POST /api/courses/:courseId/lectures
 // @access  Private (Instructor)
 exports.addLectureToCourse = asyncHandler(async (req, res, next) => {
   const course = await Course.findById(req.params.courseId);
+  console.log("Inside addLectureToCourse, courseId:", req.params.courseId);
+  
+  console.log("Inside addLectureToCourse, course:", course);
+  
 
   if (!course) {
     return res.status(404).json({ success: false, message: 'Course not found' });
@@ -230,4 +283,61 @@ exports.deleteLecture = asyncHandler(async (req, res, next) => {
   await course.save();
 
   res.status(200).json({ success: true, data: {} });
+});
+
+
+/*
+ * @desc    Submit a quiz and get the result
+ * @route   POST /api/lectures/:lectureId/quiz/submit
+ * @access  Private
+ */
+exports.submitQuiz = asyncHandler(async (req, res, next) => {
+  const { courseId, answers } = req.body; // answers is an array of { questionId: string, selectedOptionIndex: number }
+  const lectureId = req.params.lectureId;
+  const userId = req.user.id;
+
+  const lecture = await Lecture.findById(lectureId).populate('questions');
+
+  if (!lecture || lecture.type !== 'quiz') {
+    return res.status(400).json({ success: false, error: 'Not a valid quiz lecture' });
+  }
+
+  let score = 0;
+  const totalQuestions = lecture.questions.length;
+
+  lecture.questions.forEach(question => {
+    const userAnswer = answers.find(a => a.questionId === question._id.toString());
+    if (userAnswer && userAnswer.selectedOptionIndex === question.correctAnswer) {
+      score++;
+    }
+  });
+
+  const percentage = (score / totalQuestions) * 100;
+  const passed = percentage >= 70;
+
+  if (passed) {
+    // Mark as complete if passed
+    const user = await User.findById(userId);
+    let courseProgress = user.progress.find(p => p.course.toString() === courseId);
+
+    if (!courseProgress) {
+      user.progress.push({ course: courseId, completedLectures: [lectureId] });
+    } else {
+      const isCompleted = courseProgress.completedLectures.some(id => id.toString() === lectureId);
+      if (!isCompleted) {
+        courseProgress.completedLectures.push(lectureId);
+      }
+    }
+    await user.save();
+  }
+
+  res.status(200).json({
+    success: true,
+    data: {
+      score,
+      totalQuestions,
+      percentage,
+      passed
+    }
+  });
 });

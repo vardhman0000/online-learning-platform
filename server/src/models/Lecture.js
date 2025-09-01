@@ -9,7 +9,7 @@ const lectureSchema = new mongoose.Schema({
   },
   type: { 
     type: String, 
-    enum: ["Reading", "Quiz"],
+    enum: ["reading", "quiz"],
     required: true 
   },
   course: {
@@ -21,14 +21,14 @@ const lectureSchema = new mongoose.Schema({
   content: {
     type: String,
     required: function () {
-      return this.type === 'Reading';
+      return this.type === 'reading';
     },
   },
   // Content for Quiz type lectures
   questions: {
     type: [QuestionSchema],
     required: function () {
-      return this.type === 'Quiz';
+      return this.type === 'quiz';
     },
   },
 });

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
+import { useAuth } from '../context/AuthContext';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
@@ -11,6 +12,7 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -24,14 +26,16 @@ const LoginPage = () => {
     try {
       const data = await authService.login(formData);
 
-      // The authService now handles storing the token and user data correctly.
+      // Use the login function from AuthContext to set the user state globally.
+      // The user object should include the token for subsequent authenticated requests.
+      login({ ...data.user, token: data.token });
 
       console.log('Login successful:', data);
       // Redirect based on user role
       if (data.user.role === 'Instructor') {
         navigate('/dashboard/instructor');
       } else {
-        navigate('/'); // Redirect students to the home page for now
+        navigate('/'); // Redirect students to their dashboard
       }
     } catch (err) {
       // Use the error from axios response if available, otherwise use the error message.

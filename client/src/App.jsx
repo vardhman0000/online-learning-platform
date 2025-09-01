@@ -5,7 +5,7 @@ import LandingPage from './Pages/LandingPage';
 import LoginPage from './Pages/LoginPage';
 import CreateCourse from './Pages/Instructor/CreateCourse';
 // import CourseDetails from './Pages/Instructor/CourseDetails';
-import SignupPage from './Pages/SignUpPage';
+import SignupPage from './Pages/SignupPage';
 import InstructorDashboard from './Pages/Instructor/InstructorDashboard';
 import ProtectedRoute from './Components/ProtectedRoute';
 

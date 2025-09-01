@@ -2,6 +2,8 @@
 
 Learnify is a full-stack web application built with the MERN stack, designed to provide a seamless and interactive online learning experience for both students and instructors.
 
+🎥 **Demo Video**: [Watch the demo](https://drive.google.com/file/d/1VPILCXQvqeQaqWcuYPsTOSJSZxffU_-0/view?usp=drive_link)
+
 ## Features
 
 ### For Students
